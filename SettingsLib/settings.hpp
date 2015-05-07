@@ -5,60 +5,16 @@
 #ifndef _SETTINGS_SETTINGS_H_
 #define _SETTINGS_SETTINGS_H_
 
-#include <string>
-#include <map>
 #include <exception>
 #include <fstream>
-
-class settings_exception : std::exception {
-protected:
-    const settings *ptr;
-public:
-    const settings * where () {
-        return ptr;
-    }
-};
-
-class file_not_found : settings_exception {
-protected:
-    std::string name;
-public:
-    file_not_found (const std::string filename, const settings *where) {
-        ptr = where;
-        name = filename
-    }
-    const char *what () {
-        return ("File '" + name + "' not found!").c_str();
-    }
-};
-
-class param_exception : std::exception {
-protected:
-    const settings::param *ptr;
-public:
-    const settings::param * where () {
-        return ptr;
-    }
-};
-
-class cast_error : param_exception {
-protected:
-    const std::string *goal;
-public:
-    cast_error (const std::string goal, const settings::param *where) {
-        ptr = where;
-        this->goal = &goal;
-    }
-    const char *what () {
-        return ("'" + (static_cast <std::string> (*ptr)) + "' can not be converted to " + *goal).c_str();
-    }
-};
+#include <map>
+#include <string>
 
 class settings {
 friend class settings_exception;
 public:
     class param {
-    friend class settings;
+        friend class settings;
     private:
         param ();
         param (param const &);
@@ -142,9 +98,55 @@ public:
       */
     param operator[](std::string const & name);
 private:
-    void save() const;
+    void save();
     std::string filename;
-    std::map <std::string, settings::param> params;
+    std::map <std::string, std::string> params;
+    //std::pair <settings::param, std::string> temp;
+};
+
+// Exceptions
+class settings_exception : std::exception {
+protected:
+    const settings *ptr;
+public:
+    const settings * where () {
+        return ptr;
+    }
+};
+
+class file_not_found : settings_exception {
+protected:
+    std::string name;
+public:
+    file_not_found (const std::string filename, const settings *where) {
+        ptr = where;
+        name = filename;
+    }
+    const char *what () {
+        return ("File '" + name + "' not found!").c_str();
+    }
+};
+
+class param_exception : std::exception {
+protected:
+    const settings::param *ptr;
+public:
+    const settings::param * where () {
+        return ptr;
+    }
+};
+
+class cast_error : param_exception {
+protected:
+    const std::string *goal;
+public:
+    cast_error (const std::string goal, const settings::param *where) {
+        ptr = where;
+        this->goal = &goal;
+    }
+    const char *what () {
+        return ("'" + (static_cast <std::string> (*ptr)) + "' can not be converted to " + *goal).c_str();
+    }
 };
 
 

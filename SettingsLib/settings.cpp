@@ -1,8 +1,34 @@
 //
 // Created by mvv-1 on 28.03.2015.
 //
-
 #include "settings.hpp"
+
+namespace std {
+    string to_string(long a) {
+        if (a == 0) {
+            return "0";
+        }
+        bool minlong = false;
+        string res = "";
+        if (a < 0) {
+            res = "-";
+            a *= -1;
+            if (a < 0) {
+                minlong = true;
+                a++;
+                a *= -1;
+            }
+        }
+        while (a > 0) {
+            res = static_cast <char> (a % 10 + '0') + res;
+            a /= 10;
+        }
+        if (minlong) {
+            res[res.size() - 1]++;
+        }
+        return res;
+    }
+}
 
 std::string downcase (std::string str) {
     std::string res;
@@ -221,7 +247,7 @@ settings::param &settings::param::operator+= (int a) {
         }
     }
     else {
-        throw cast_error("int", this)
+        throw cast_error("int", this);
     }
     return *this;
 }
@@ -234,7 +260,7 @@ settings::param &settings::param::operator+= (double a) {
         }
     }
     else {
-        throw cast_error("double", this)
+        throw cast_error("double", this);
     }
     return *this;
 }
@@ -247,7 +273,7 @@ settings::param &settings::param::operator-= (int a) {
         }
     }
     else {
-        throw cast_error("int", this)
+        throw cast_error("int", this);
     }
     return *this;
 }
@@ -260,7 +286,7 @@ settings::param &settings::param::operator-= (double a) {
         }
     }
     else {
-        throw cast_error("double", this)
+        throw cast_error("double", this);
     }
     return *this;
 }
@@ -273,7 +299,7 @@ settings::param &settings::param::operator*= (int a) {
         }
     }
     else {
-        throw cast_error("int", this)
+        throw cast_error("int", this);
     }
     return *this;
 }
@@ -286,7 +312,7 @@ settings::param &settings::param::operator*= (double a) {
         }
     }
     else {
-        throw cast_error("double", this)
+        throw cast_error("double", this);
     }
     return *this;
 }
@@ -299,7 +325,7 @@ settings::param &settings::param::operator/= (int a) {
         }
     }
     else {
-        throw cast_error("int", this)
+        throw cast_error("int", this);
     }
     return *this;
 }
@@ -312,7 +338,7 @@ settings::param &settings::param::operator/= (double a) {
         }
     }
     else {
-        throw cast_error("double", this)
+        throw cast_error("double", this);
     }
     return *this;
 }
@@ -325,7 +351,7 @@ settings::param &settings::param::operator%= (int a) {
         }
     }
     else {
-        throw cast_error("int", this)
+        throw cast_error("int", this);
     }
     return *this;
 }
@@ -338,7 +364,7 @@ settings::param &settings::param::operator|= (bool a) {
         }
     }
     else {
-        throw cast_error("bool", this)
+        throw cast_error("bool", this);
     }
     return *this;
 }
@@ -351,7 +377,7 @@ settings::param &settings::param::operator&= (bool a) {
         }
     }
     else {
-        throw cast_error("bool", this)
+        throw cast_error("bool", this);
     }
     return *this;
 }
@@ -370,8 +396,6 @@ std::string const &settings::get (std::string const &name, std::string const &de
         return params.at(name);
     }
     catch (std::out_of_range) {
-        params[name] = def;
-        save();
         return def;
     }
 }
@@ -399,22 +423,22 @@ void settings::reload () {
     }
 }
 
-void settings::save () const {
+void settings::save () {
     std::ofstream ouf(filename);
-    for (std::map::iterator i = params.begin(); i < params.end(); i++) {
+    for (auto i = params.begin(); i != params.end(); i++) {
         ouf << (*i).first << ' ' << static_cast <std::string> ((*i).second) << '\n';
     }
     ouf << "!!";
     ouf.close();
 }
-
-settings::param const settings::operator[] (std::string const &name) const {
-    return params[name];
-}
-
-settings::param settings::operator[] (std::string const &name) {
-    return params[name];
-}
+//
+//settings::param const settings::operator[] (std::string const &name) const {
+//    return static_cast<param>(params.at(name));
+//}
+//
+//settings::param settings::operator[] (std::string const &name) {
+//    return static_cast<param>(params[name]);
+//}
 
 void settings::reset () {
     params.clear();
