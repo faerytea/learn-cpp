@@ -3,6 +3,7 @@
 //
 #include "settings.hpp"
 
+#ifdef MY_TO_STRING
 namespace std {
     string to_string(long a) {
         if (a == 0) {
@@ -29,6 +30,7 @@ namespace std {
         return res;
     }
 }
+#endif
 
 std::string downcase (std::string str) {
     std::string res;
