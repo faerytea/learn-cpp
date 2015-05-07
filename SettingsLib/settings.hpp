@@ -18,6 +18,7 @@ public:
     private:
         param ();
         param (param const &);
+        param (std::string);
         void set_string ();
         void set_boolean ();
         void set_integer ();

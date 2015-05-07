@@ -431,16 +431,21 @@ void settings::save () {
     ouf << "!!";
     ouf.close();
 }
-//
-//settings::param const settings::operator[] (std::string const &name) const {
-//    return static_cast<param>(params.at(name));
-//}
-//
-//settings::param settings::operator[] (std::string const &name) {
-//    return static_cast<param>(params[name]);
-//}
+
+settings::param const settings::operator[] (std::string const &name) const {
+    return param(((std::string)params.at(name)));//static_cast<param>(params.at(name));
+}
+
+settings::param settings::operator[] (std::string const &name) {
+    return param(params[name]);
+}
 
 void settings::reset () {
     params.clear();
     save();
+}
+
+settings::param::param (std::string string) {
+    param();
+    (*this) = string;
 }
