@@ -448,7 +448,14 @@ bool settings::param::is_empty () const {
 
 settings::settings (std::string const &filename) {// throw (file_not_found) {
     this->filename = filename;
-    this->reload();
+    try {
+        this->reload();
+    }
+    catch (file_not_found) {
+        std::ofstream ouf(filename.c_str());
+        ouf << "!!";
+        ouf.close();
+    }
 }
 
 std::string const &settings::get (std::string const &name, std::string const &def) const {
