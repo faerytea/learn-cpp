@@ -32,6 +32,58 @@ namespace std {
 }
 #endif
 
+class settings_exception : std::exception {
+protected:
+    const settings *ptr;
+public:
+    const settings * where () throw() {
+        return ptr;
+    }
+    ~settings_exception () throw() {
+        delete(ptr);
+    }
+};
+
+class file_not_found : settings_exception {
+protected:
+    std::string name;
+public:
+    file_not_found (const std::string filename, const settings *where) throw() {
+        ptr = where;
+        name = filename;
+    }
+    const char *what () throw() {
+        return ("File '" + name + "' not found!").c_str();
+    }
+    ~file_not_found () throw() {}
+};
+
+class param_exception : std::exception {
+protected:
+    const settings::param *ptr;
+public:
+    const settings::param * where () throw() {
+        return ptr;
+    }
+};
+
+class cast_error : param_exception {
+protected:
+    const std::string *goal;
+public:
+    cast_error (const std::string goal, const settings::param *where) throw() {
+        ptr = where;
+        this->goal = &goal;
+    }
+    const char *what () throw() {
+        return ("'" + (static_cast <std::string> (*ptr)) + "' can not be converted to " + *goal).c_str();
+    }
+    ~cast_error () throw() {
+        delete(ptr);
+        delete(goal);
+    }
+};
+
 std::string downcase (std::string str) {
     std::string res;
     res.resize(str.size());
@@ -42,7 +94,7 @@ std::string downcase (std::string str) {
 }
 
 settings::param::param () {
-    string = "";
+    string = new std::string("");
     is_integer = false;
     is_floating = false;
     is_boolean = false;
@@ -61,7 +113,7 @@ settings::param::param (settings::param const &a) {
 }
 
 settings::param::operator std::string () const {
-    return this->string;
+    return *(this->string);
 }
 
 settings::param::operator int () const {
@@ -92,7 +144,9 @@ settings::param::operator double () const {
 }
 
 settings::param &settings::param::operator= (std::string const &a) {
-    this->string = a;
+    delete(this->string);
+    this->string = new std::string(a);
+//    *(this->string) = a;
     if (this->instant_sync) {
         this->set_string();
     }
@@ -130,8 +184,8 @@ void settings::param::set_string () {
     this->is_boolean = false;
     this->is_integer = false;
     this->is_floating = false;
-    if (this->string != "") {
-        const std::string downcase_str = downcase(this->string);
+    if (*(this->string) != "") {
+        const std::string downcase_str = downcase(*(this->string));
         if ((downcase_str == "true") || (downcase_str == "1")) {
             this->boolean = true;
             this->is_boolean = true;
@@ -200,16 +254,18 @@ void settings::param::set_boolean () {
     this->is_floating = false;
     if (this->boolean) {
         this->integer = 1;
-        this->string = "true";
+        *(this->string) = "true";
     }
     else {
         this->integer = 0;
-        this->string = "false";
+        *(this->string) = "false";
     }
 }
 
 void settings::param::set_integer () {
-    this->string = std::to_string(this->integer);
+//    delete(this->string);
+//    this->string = new std::string(std::to_string(this->integer));
+    *(this->string) = std::to_string(this->integer);
     this->is_boolean = false;
     if (this->integer == 0) {
         this->is_boolean = true;
@@ -226,7 +282,9 @@ void settings::param::set_integer () {
 void settings::param::set_floating () {
     this->is_boolean = false;
     this->is_integer = false;
-    this->string = std::to_string(this->floating);
+//    delete(this->string);
+//    this->string = new std::string(std::to_string(this->floating));
+    *(this->string) = std::to_string(this->floating);
     if (static_cast <double> (static_cast <int> (this->floating)) == this->floating) {
         this->is_integer = true;
         this->integer = static_cast <int> (this->floating);
@@ -234,7 +292,7 @@ void settings::param::set_floating () {
 }
 
 settings::param &settings::param::operator+= (std::string const &a) {
-    this->string += a;
+    *(this->string) += a;
     if (this->instant_sync) {
         set_string();
     }
@@ -385,10 +443,10 @@ settings::param &settings::param::operator&= (bool a) {
 }
 
 bool settings::param::is_empty () const {
-    return string.size() == 0;
+    return (*(this->string)).empty();
 }
 
-settings::settings (std::string const &filename) {
+settings::settings (std::string const &filename) {// throw (file_not_found) {
     this->filename = filename;
     this->reload();
 }
@@ -397,7 +455,7 @@ std::string const &settings::get (std::string const &name, std::string const &de
     try {
         return params.at(name);
     }
-    catch (std::out_of_range) {
+    catch (const std::exception&) {
         return def;
     }
 }
@@ -407,17 +465,17 @@ void settings::set (std::string const &name, std::string const &value) {
     save();
 }
 
-void settings::reload () {
-    std::ifstream inf (filename);
+void settings::reload () {// throw (file_not_found) {
+    std::ifstream inf(filename.c_str());
     if (inf.is_open()) {
         std::string line;
         getline(inf, line);
-        do {
+        while (line != "!!") {
             int i;
             for (i = 0; (i < line.size()) && (line[i] != ' '); i++);
             params[line.substr(0, i)] = line.substr(i + 1, line.size() - i - 1);
             getline(inf, line);
-        } while (line != "!!");
+        }
         inf.close();
     }
     else {
@@ -426,8 +484,8 @@ void settings::reload () {
 }
 
 void settings::save () {
-    std::ofstream ouf(filename);
-    for (auto i = params.begin(); i != params.end(); i++) {
+    std::ofstream ouf(filename.c_str());
+    for (std::map<std::string, std::string>::iterator i = params.begin(); i != params.end(); i++) {
         ouf << (*i).first << ' ' << static_cast <std::string> ((*i).second) << '\n';
     }
     ouf << "!!";
@@ -435,11 +493,13 @@ void settings::save () {
 }
 
 settings::param const settings::operator[] (std::string const &name) const {
-    return param(((std::string)params.at(name)));//static_cast<param>(params.at(name));
+    return param(new std::string(params.at(name)));//static_cast<param>(params.at(name));
 }
 
 settings::param settings::operator[] (std::string const &name) {
-    return param(params[name]);
+//    param * p = new param(&params[name]);
+//    return *p;
+    return param(&params[name]);
 }
 
 void settings::reset () {
@@ -447,7 +507,15 @@ void settings::reset () {
     save();
 }
 
-settings::param::param (std::string string) {
-    param();
-    (*this) = string;
+settings::param::param (std::string *string) {
+    is_integer = false;
+    is_floating = false;
+    is_boolean = false;
+    instant_sync = true;
+    this->string = string;
+    this->set_string();
+}
+
+settings::param::~param () {
+    delete(string);
 }
