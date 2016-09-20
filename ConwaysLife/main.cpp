@@ -670,7 +670,7 @@ int main () {
                 work = false;
                 break;
             case '-':
-                cout << endl; // do nothing
+                cout << endl; // do nothing, just because 
                 break;
             default:
                 cout<<"Wrong!"<<endl;
